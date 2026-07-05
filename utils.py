@@ -63,8 +63,6 @@ def softmax(x:np.ndarray) -> np.ndarray:
     sums = 1 / np.sum(exp_x,axis = 1) # (B,)
     return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
-
-
 """"
 
 to do :  keepdims avoid doing doing [:,None]
