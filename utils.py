@@ -98,7 +98,15 @@ def softmax_grad(x:np.ndarray) -> np.ndarray:
     dzi/dxj = -zj*zi if i = j
     
     """
-    np.diag(np.diag(x*(1-x))) 
+    x1 = x[...,None] # (B,DIM,1)
+    x2 = x1.transpose(0,2,1) # (B,1,DIM)
+
+    off_diag = - (x1 @ x2) # (B,DIM,1) @ (B,1,DIM) =  (B,DIM,DIM) 
+    identity = np.eye(x1.shape[1])[None,...] # (1,DIM,DIM)
+    on_diag =  identity * x1 # (1,DIM,DIM) * (B,DIM,1) -->(B,DIM,DIM)
+    output = off_diag + on_diag # 
+    return output
+
 
 
 """"
