@@ -60,23 +60,45 @@ def mlp_layer_grad_W(cache:np.ndarray)->tuple[np.ndarray]:
 
 
 
-def relu_layer(x:np.ndarray) -> tuple[np.ndarray]:
-    output = np.max(x,0.0 + 1e-10)
-    return x,output
 
-def relu_layer_grad_w(x:np.ndarray)->np.ndarray:
-    
+
+def relu_layer(x:np.ndarray) -> np.ndarray:
+    output = np.max(x,0.0 + 1e-10)
+    return output
+
+def relu_layer_grad(x:np.ndarray)->np.ndarray:
+    return  (x>0).astype(int)
+
+
+
 
 def sigmoid_layer(x:np.ndarray) -> np.ndarray:
-    return (np.exp(x) / np.exp(x) + 1)
+    output = (np.exp(x) / np.exp(x) + 1)
+    return output
+
+def sigmoid_layer_grad(x:np.ndarray) -> np.ndarray:
+    
+    """
+    sigmoid'(x) = sigmoid(x)*(1-sigmoid(x))
+    
+    """
+    return (sigmoid_layer(x) * (1-sigmoid_layer(x)))
+
+
 
 def softmax(x:np.ndarray) -> np.ndarray:
     exp_x = np.exp(x) # (B,DIM ) 
     sums = 1 / np.sum(exp_x,axis = 1) # (B,)
     return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
-
-
+def softmax_grad(x:np.ndarray) -> np.ndarray:
+    """
+    x of shape (B,DIM)
+    dzi/dxi = zi(1-zi) 
+    dzi/dxj = -zj*zi if i = j
+    
+    """
+    np.diag(np.diag(x*(1-x))) 
 
 
 """"
@@ -84,5 +106,6 @@ def softmax(x:np.ndarray) -> np.ndarray:
 Future :  
     - keepdims avoid doing doing [:,None]
     - substracting max for numerical stability
-    - caching for backward pass  
+    - caching for backward pass
+    - softmax implementation  
 """
