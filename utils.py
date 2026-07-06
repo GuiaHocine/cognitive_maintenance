@@ -48,12 +48,24 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
   
 
 
-def mlp_layer(x:np.ndarray,W:np.ndarray)->np.ndarray:
-    return x @ W # (B,dim) @ (dim,dim_output) -> (B,dim_output)
+def mlp_layer(x:np.ndarray,W:np.ndarray)->tuple[np.ndarray,tuple[np.ndarray,np.ndarray]]:
+    
+    output = x@W  # (B,dim) @ (dim,dim_output) -> (B,dim_output)
+    cache = (x,W) 
+    return output,cache
+
+def mlp_layer_grad_W(cache:np.ndarray)->tuple[np.ndarray]:
+    cache, = cache
+    return cache[0].T  #(dim,B)
 
 
-def relu_layer(x:np.ndarray) -> np.ndarray:
-    return (np.max(x,0.0 + 1e-10))
+
+def relu_layer(x:np.ndarray) -> tuple[np.ndarray]:
+    output = np.max(x,0.0 + 1e-10)
+    return x,output
+
+def relu_layer_grad_w(x:np.ndarray)->np.ndarray:
+    
 
 def sigmoid_layer(x:np.ndarray) -> np.ndarray:
     return (np.exp(x) / np.exp(x) + 1)
@@ -63,9 +75,14 @@ def softmax(x:np.ndarray) -> np.ndarray:
     sums = 1 / np.sum(exp_x,axis = 1) # (B,)
     return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
+
+
+
+
 """"
 
-to do :  keepdims avoid doing doing [:,None]
-      : substracting max for numerical stability
-
+Future :  
+    - keepdims avoid doing doing [:,None]
+    - substracting max for numerical stability
+    - caching for backward pass  
 """
