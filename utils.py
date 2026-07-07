@@ -30,7 +30,7 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
     y_hat = np.clip(log_y_hat,1e-15 , 1.0 - 1e-15)
 
     if option == 1: 
-        computations = (-y_true.T)*y_hat # (B,nbr_classes) --> element wise multiplication
+        computations = (-y_true)*y_hat # (B,nbr_classes) --> element wise multiplication
         losses = np.sum(computations,axis = 1) # (B,1)
         
         return np.average(losses,axis = 0)
@@ -59,8 +59,9 @@ def mlp_layer_grad_W(cache:np.ndarray)->tuple[np.ndarray]:
     return cache[0].T  #(dim,B)
 
 
-
-
+def mlp_layer_grad_x(cache:np.ndarray)->tuple[np.ndarray]:
+    cache, = cache
+    return cache[1] #(dim,dim_output)
 
 def relu_layer(x:np.ndarray) -> np.ndarray:
     output = np.max(x,0.0 + 1e-10)
@@ -86,12 +87,12 @@ def sigmoid_layer_grad(x:np.ndarray) -> np.ndarray:
 
 
 
-def softmax(x:np.ndarray) -> np.ndarray:
+def softmax_layer(x:np.ndarray) -> np.ndarray:
     exp_x = np.exp(x) # (B,DIM ) 
     sums = 1 / np.sum(exp_x,axis = 1) # (B,)
     return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
-def softmax_grad(x:np.ndarray) -> np.ndarray:
+def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
     """
     x of shape (B,DIM)
     dzi/dxi = zi(1-zi) 
