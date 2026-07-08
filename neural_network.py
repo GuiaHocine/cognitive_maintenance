@@ -28,9 +28,18 @@ cache = {
     "x4":None,
 }
 
-def forward_pass(x:np.ndarray) -> np.ndarray:
-    x1,cache_1 = mlp_layer(x)
+def forward_pass(x:np.ndarray,y_true:np.ndarray) -> np.ndarray:
+    x1,cache_1 = mlp_layer(x,cache["cache_1"][1])
+    cache["cache_1"] = cache_1
+    cache["x1"] = x1
     x2 = relu_layer(x1)
-    x3,cache_2 = mlp_layer(x2)
+    x3,cache_2 = mlp_layer(x2,cache["cache_2"][1])
+    cache["cache_2"]=cache_2
+    cache["x3"]=x3
     x4 = softmax_layer(x3)
-    #cache[]
+    cache["x4"]=x4
+    loss = cross_entropy_loss(y_pred=x4,y_true=y_true)
+    return loss,
+
+def backward_pass(loss:float,cache:dict,y_true:np.ndarray):
+    pass
