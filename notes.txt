@@ -1,0 +1,74 @@
+brutes notes
+denominator layout notes
+matrix-vector multiplication : W@x
+Matrix-Matrix multiplication : X@W
+Element Wise Mutiplication : Hadamart product A+brutes
+transpose : A.T 
+collapsing : summing acros axis (0 for columns 1 for rows) np.sum(matrix,axis)
+broadcasting : happens automatically
+np.diag
+np.sum(W,axis = 0 ou 1) compressing
+np.stack (d1,1) (d1,1) -->(d1,2)
+np.clip for numerical stability(x,min,max)
+we want to multiply (B,DIM) by (B,) :  x[:,None] add a dimension -> automatic broadcasting --> matrix element wise mutliplication
+keepdims = True  equivalent to x[:,None]
+
+
+HOW : Procedural mode for now , maybe switching in oop in the future
+USING: Numpy only
+what need to be built :  
+-  Implementation of different objective function MSE,CEL
+- Implementation of well known heuristics ( activation functions ) : Relu,Sigmoid,ect
+- Implementing the derivatives of the different activation function
+- Implementing the backward pass engine ! 
+
+having those tools I will be able to  implement different architectures 
+the backward engine remain the core,critical algorithm to implement
+
+(x>0).astype(int) ---> trick for relu
+np.transpose(0,1,2)  # return a view , thus modifying the view modify the original array
+np.eyes(N=10)[None,...] ---> create identity 10*10 and add an axis
+
+
+
+
+﻿I have this neural network:
+
+
+x (dim,1) →x1(dim1,1) – x2 (dim1,1)  →x3 (dim2,1) —>x4 (dim2,1) —> loss (scalar)
+
+
+x->x1 (mlp)
+x1->x2(relu)
+x2->x3(mlp)
+x3->x4(softmax)
+x4->cross entropy  loss
+
+
+I am following the denominator layout formula which and applying the ‘ inverse chain rule ‘
+with dscalar/matrix =  matrix shape  and  dvector/dvector -> matrix.T and dvector/dmatrix -> vector.T
+well it works out perfectly when I am treating a single example single vector (dim,1) as input but when trying to find a formula for treating a batch (b,dim) I am lost
+
+
+in batch mode : 
+dL/dx4 should be (B,dim2) … (1)
+dx4/dx3 should be (B,dim2,dim2) …(2)
+
+
+I should broadcast maybe 1 (add an axis at the end) : (B,dim2,1) then : 
+dL/dx3 should be (B,dim2) :   (2) @ (1)  = (B,dim2,1) and then I remove the last avis
+        
+        dx3/dx2 : (dim1,dim2)
+dL/dx2  should be  (B,dim1)  = dL/dx3 @ (dx3/dx2).T =   (B,dim2) @(dim2,dim1) =(B,dim1)
+dL/dw2 : (B,dim1,dim2) = …
+dL/dx1  (B,dim1)  : dx2/dx1 @ dL/dx2  = (B,dim1,dim1)
+I feel like its getting complicated. Is it the right way?
+
+
+
+
+Or maybe I need to shift my logic and forget completely abt the batch dim? just I add an 
+axis  like this : 
+vector mode forward pass : (dim2,dim1) @ (dim1,1) = (dim2,1)
+batch mode forward pass right now : (B,dim1)@(dim1,dim2) = (B,dim2)
+batch future mode maybe forward pass  (B,dim2,dim1) @ (B,dim1,1)  = (B,dim2,1)

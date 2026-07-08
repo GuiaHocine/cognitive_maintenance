@@ -75,3 +75,9 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     cache["cache_2"][1] = cache["cache_2"][1] - alpha * gradients["dL/dw1"]
                                                                 
 
+"""
+
+
+to DO :  switch to different thinking mode for backward add an axis at the end would really help , same logic as one sample derivative 
+
+"""
