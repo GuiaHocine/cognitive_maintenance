@@ -57,12 +57,12 @@ def mlp_layer(x:np.ndarray,W:np.ndarray)->tuple[np.ndarray,tuple[np.ndarray,np.n
 
 def mlp_layer_grad_W(cache:np.ndarray)->np.ndarray:
     cache, = cache
-    return cache[0].T  #(dim,B)
+    return cache[0] #(B,DIM)
 
 
 def mlp_layer_grad_x(cache:np.ndarray)->np.ndarray:
     cache, = cache
-    return cache[1] #(dim,dim_output)
+    return (cache[1]) #(dim,dim_output)
 
 def relu_layer(x:np.ndarray) -> np.ndarray:
     output = np.max(x,0.0 + 1e-10)
@@ -106,8 +106,8 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
     off_diag = - (x1 @ x2) # (B,DIM,1) @ (B,1,DIM) =  (B,DIM,DIM) 
     identity = np.eye(x1.shape[1])[None,...] # (1,DIM,DIM)
     on_diag =  identity * x1 # (1,DIM,DIM) * (B,DIM,1) -->(B,DIM,DIM)
-    output = off_diag + on_diag # 
-    return output
+    output = off_diag + on_diag # (B,DIM,DIM)
+    return output # (B,DIM,DIM)
 
 
 

@@ -15,21 +15,18 @@ DIM_2 = 5
 
 
 x = np.random.randn(32,10)
-
-params_init_config = {
-    'W2': np.random.randn(BATCH_SIZE,DIM_1,DIM_2)
-}
+w1 = np.random.randn(BATCH_SIZE,DIM,DIM_1)
+w2 = np.random.randn(BATCH_SIZE,DIM_1,DIM_2)
 
 cache = {
-    "cache_1":(None,np.random.randn(BATCH_SIZE,DIM,DIM_1)),
+    "cache_1":(None,w1),
     "x1":None,
-    "cache_2":(None,np.random.randn(BATCH_SIZE,DIM,DIM_1)),
+    "cache_2":(None,w2),
     "x3":None,
     "x4":None,
 }
 
 gradients = {
-
 "dL/dx4":None,
 "dx4/dx3":None,
 "dx3/dx2":None,
@@ -40,12 +37,14 @@ gradients = {
 "dL/dw2":None,
 }
 
-def forward_pass(x:np.ndarray,y_true:np.ndarray) -> np.ndarray:
-    x1,cache_1 = mlp_layer(x,cache["cache_1"][1])
+def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
+    w1 = cache["cache_1"][1]
+    x1,cache_1 = mlp_layer(x,w1)
     cache["cache_1"] = cache_1
     cache["x1"] = x1
     x2 = relu_layer(x1)
-    x3,cache_2 = mlp_layer(x2,cache["cache_2"][1])
+    w2=cache["cache_2"][1]
+    x3,cache_2 = mlp_layer(x2,w2)
     cache["cache_2"]=cache_2
     cache["x3"]=x3
     x4 = softmax_layer(x3)
@@ -58,13 +57,14 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     """
     Gradient computations 
     """
-    gradients["dL/dx4"] = cross_entropy_backward(y_true,cache["x4"])
-    gradients["dx4/dx3"] = softmax_layer_grad(cache["x4"])
-    gradients["dx3/dx2"] = mlp_layer_grad_x(cache["cache_2"])
-    gradients ["dx3/dw2"] = mlp_layer_grad_W(cache["cache_2"])
-    gradients["dx2/dx1"] = relu_layer_grad(cache["cache_2"])
-    gradients["dx1/dw1"] = mlp_layer_grad_W(cache["cache_1"])
-    gradients["dL/dw2"] = gradients["dx3/dw2"] @ gradients["dx4/dx3"] @ gradients["dL/dx4"]
+    gradients["dL/dx4"] = cross_entropy_backward(y_true,cache["x4"])[...,None] #(B,DIM2,1)
+    gradients["dx4/dx3"] = softmax_layer_grad(cache["x4"]) # (B,DIM2,DIM2)
+    gradients["dx3/dx2"] = mlp_layer_grad_x(cache["cache_2"])[None,...] # (1,DIM1,DIM2) broadcasting then
+    gradients["dx3/dw2"] = mlp_layer_grad_W(cache["cache_2"]) # (B,1,DIM1)
+    gradients["dx2/dx1"] = relu_layer_grad(cache["cache_2"]) # (B,DIM1)
+    gradients["dx1/dw1"] = mlp_layer_grad_W(cache["cache_1"]) # (1,DIM1,DIM1)
+
+    gradients["dL/dw2"] = gradients["dx3/dw2"] @ gradients["dx4/dx3"] @ gradients["dL/dx4"] #  (B,DIM1) @ (B,DIM2,DIM2) @ (B,DIM2)           (B,DIM1,DIM2)
     gradients["dL/dw1"] = gradients["dx1/dw1"] @ gradients["dx2/dx1"] @ gradients["dx3/dx2"] @ gradients["dx4/dx3"] @ gradients["dL/dx4"]
 
     """
@@ -73,5 +73,5 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     """
     cache["cache_1"][1] =  cache["cache_1"][1] -alpha * gradients["dL/dw1"]
     cache["cache_2"][1] = cache["cache_2"][1] - alpha * gradients["dL/dw1"]
-                                                                  
-    pass
+                                                                
+
