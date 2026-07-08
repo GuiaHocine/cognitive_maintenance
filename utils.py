@@ -55,12 +55,12 @@ def mlp_layer(x:np.ndarray,W:np.ndarray)->tuple[np.ndarray,tuple[np.ndarray,np.n
     cache = (x,W) 
     return output,cache
 
-def mlp_layer_grad_W(cache:np.ndarray)->tuple[np.ndarray]:
+def mlp_layer_grad_W(cache:np.ndarray)->np.ndarray:
     cache, = cache
     return cache[0].T  #(dim,B)
 
 
-def mlp_layer_grad_x(cache:np.ndarray)->tuple[np.ndarray]:
+def mlp_layer_grad_x(cache:np.ndarray)->np.ndarray:
     cache, = cache
     return cache[1] #(dim,dim_output)
 
