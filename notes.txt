@@ -72,3 +72,9 @@ axis  like this :
 vector mode forward pass : (dim2,dim1) @ (dim1,1) = (dim2,1)
 batch mode forward pass right now : (B,dim1)@(dim1,dim2) = (B,dim2)
 batch future mode maybe forward pass  (B,dim2,dim1) @ (B,dim1,1)  = (B,dim2,1)
+
+
+
+
+
+THE ONLY RULE ! d L/d object shoud be SAME SHAPE AS OBJECT !
