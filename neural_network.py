@@ -59,12 +59,14 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     """
     gradients["dL/dx4"] = cross_entropy_backward(y_true,cache["x4"])[...,None] #(B,DIM2,1)
     gradients["dx4/dx3"] = softmax_layer_grad(cache["x4"]) # (B,DIM2,DIM2)
-    gradients["dx3/dx2"] = mlp_layer_grad_x(cache["cache_2"])[None,...] # (1,DIM1,DIM2) broadcasting then
+    gradients["dx3/dx2"] = mlp_layer_grad_x(cache["cache_2"])[None,...] # (1,DIM1,DIM2)
     gradients["dx3/dw2"] = mlp_layer_grad_W(cache["cache_2"]) # (B,1,DIM1)
-    gradients["dx2/dx1"] = relu_layer_grad(cache["cache_2"]) # (B,DIM1)
-    gradients["dx1/dw1"] = mlp_layer_grad_W(cache["cache_1"]) # (1,DIM1,DIM1)
+    gradients["dx2/dx1"] = relu_layer_grad(cache["cache_2"]) # (B,DIM1,1)
+    gradients["dx1/dw1"] = mlp_layer_grad_W(cache["cache_1"]) # (DIM1,1)
 
-    gradients["dL/dw2"] = gradients["dx3/dw2"] @ gradients["dx4/dx3"] @ gradients["dL/dx4"] #  (B,DIM1) @ (B,DIM2,DIM2) @ (B,DIM2)           (B,DIM1,DIM2)
+
+    gradients["dL/dx3"] = gradients["dx4/dx3"] @ gradients["dL/dx4"] # (B,DIM2,DIM2) @ (B,DIM2,1) = (B,DIM2,1)
+    gradients["dL/dw2"] = gradients["dL/dx3"] @ gradients["dx3/dw2"] #(B,DIM1,DIM2) = (B,DIM1,1) @ (B,1,DIM2) =(B,DIM1,DIM2) 
     gradients["dL/dw1"] = gradients["dx1/dw1"] @ gradients["dx2/dx1"] @ gradients["dx3/dx2"] @ gradients["dx4/dx3"] @ gradients["dL/dx4"]
 
     """

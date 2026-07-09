@@ -119,3 +119,36 @@ Future :
     - caching for backward pass
     - softmax implementation  
 """
+
+
+"""
+Transformer implementation architecture 
+
+"""
+
+
+
+# VOCAB_SIZE = 50000
+# DIM = 128
+# SEQ_LENGTH = 1024
+# BATCH_SIZE = 32
+# INPUT : (BATCH,SEQ_LENGTH)
+
+def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
+    return x[...,None] @ w  # (BATCH,SEQ_LENGTH,1) @ (1,VOCAB_ISZE) = (BATCH,SEQ_LENGTH,VOCAB_SIZE)
+
+def query_proj(x:np.ndarray,w:np.ndarray) -> np.ndarray:
+    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
+
+
+def key_proj(x:np.ndarray,w) -> np.ndarray:
+    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
+    
+
+def value_proj(x:np.ndarray,w) -> np.ndarray:
+    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
+
+
+def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
+    # (BATCH,SEQ LEN ,SEQ LEN )
+    query 
