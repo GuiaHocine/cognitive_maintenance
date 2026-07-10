@@ -49,23 +49,23 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
 def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
     return - (y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))
 
-def mlp_layer(x:np.ndarray,W:np.ndarray)->tuple[np.ndarray,tuple[np.ndarray,np.ndarray]]:
+def mlp_layer(x:np.ndarray,W:np.ndarray)->np.ndarray:
     
     output = x@W  # (B,dim) @ (dim,dim_output) -> (B,dim_output)
-    cache = (x,W) 
-    return output,cache
+    return output
 
 def mlp_layer_grad_W(cache:np.ndarray)->np.ndarray:
-    cache, = cache
     return cache[0] #(B,DIM)
 
 
 def mlp_layer_grad_x(cache:np.ndarray)->np.ndarray:
-    cache, = cache
     return (cache[1]) #(dim,dim_output)
 
+def mlp_grad(cache:np.ndarray) -> np.ndarray:
+    dx,dw = cache[1],cache[0]
+
 def relu_layer(x:np.ndarray) -> np.ndarray:
-    output = np.max(x,0.0 + 1e-10)
+    output =  (x>0).astype(int) *  x 
     return output
 
 def relu_layer_grad(x:np.ndarray)->np.ndarray:
