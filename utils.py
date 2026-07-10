@@ -152,3 +152,4 @@ def value_proj(x:np.ndarray,w) -> np.ndarray:
 def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
     # (BATCH,SEQ LEN ,SEQ LEN )
     query 
+

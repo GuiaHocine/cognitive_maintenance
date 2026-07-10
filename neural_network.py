@@ -8,10 +8,10 @@ x ---> mlp --->relu--->mlp--->softmax--->cross entropy loss
 import numpy as np 
 from utils import mlp_layer,mlp_layer_grad_W,mlp_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward
 
-DIM = 5
+DIM = 2
 BATCH_SIZE = 32
 DIM_1 = 10
-DIM_2 = 7
+DIM_2 = 2
 
 
 x = np.random.randn(BATCH_SIZE,DIM)
@@ -112,6 +112,32 @@ dL/W1 = dL/dx2 @ dx2/dW1  =  (dim2,1) @ (1,dim1)  = (dim2,dim1)     |   dL/W1 = 
 
 
 
-loss = forward_pass(x,y_true)
-boolean = backward_pass(y_true,cache)
-print(boolean)
+
+
+
+
+
+"""
+test on data classification:
+
+dumb rule : (x1,x2,0) --> if x1>x2  y = 1 else y = 0
+
+"""
+
+X = np.random.randn(1000,2)
+column_1 = ((X[:,0]>X[:,1]).astype(int))
+column_2 =  ((X[:,1]>X[:,0]).astype(int))
+Y = np.stack((column_1,column_2),axis=1)
+
+
+for i in range (0,len(X),BATCH_SIZE):
+    x =  X[i:BATCH_SIZE]
+    y_true =  Y[i:BATCH_SIZE]
+    loss = forward_pass(x,y_true)
+    print(loss)
+    backward_pass(y_true,cache)
+
+
+
+
+
