@@ -83,3 +83,28 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
 to DO :  switch to different thinking mode for backward add an axis at the end would really help , same logic as one sample derivative 
 
 """
+
+""""
+
+x -->x1---->z1---->x2--->z2---->L
+(dim,1) (dim1,1)  (dim2,1) (dim2,1)  scalar
+
+
+    Vector mode :                                                    Batch Mode: 
+
+dL/dz2 ---> (dim2,1)                                                |   dL/dz2 --->(B,DIM2)
+dz2/dx2 --> (dim2,dim2)                                             |   dz2/dx2 -->(B,DIM2,DIM2)
+dL/dx2 --> dz2/dx2 @ dL/dz2 =  (dim2,dim2) @ (dim2,1) -> (dim2,1)   |   dL/dx2 = dz2/dx2 @ dL/dz2 =  (B,dim2,dim2) @ (B,dim2) -> (B,dim2)
+dx2/dz1 --> (dim1,dim2) = W1.T                                      |   dx2/dz1 --> (B,dim1,dim2) = W1 
+dL/dz1 -> dx2/dz1 @ dL/dx2 = (dim1,dim2) @ (dim2,1) -> (dim1,1)     |   dL/dz1 -> dx2/dz1 @ dL/dx2 = (B,dim1,dim2) @ (B,dim2) -> (B,dim1) 
+dx2/dw1 = (1,dim1)                                                  |   dx2/dw1 = (B,dim1)  
+dL/W1 = dL/dx2 @ dx2/dW1  =  (dim2,1) @ (1,dim1)  = (dim2,dim1)     |   dL/W1 = dx2/dW1 @ dL/dx2   =  (B,dim1) @ (B,dim2) (with broadcasting) = (B,dim1,dim2)
+                                                                    |   dz1/dx1 --> (B,DIM1,DIM1)
+                                                                    |   dx1/dW -->(B,dim)
+                                                                        dL/x1 = dz1/dx1 @ dL/dz1 = (B,DIM1,DIM1) @ (B,DIM1 ) -> (B,DIM1)
+                                                                        dL/dw = (B,dim) @ (B,dim1) (with broadcastin last axis) -> (B,DIM,DIM1)
+
+                                                                        
+ 
+
+"""
