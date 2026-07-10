@@ -89,7 +89,9 @@ def sigmoid_layer_grad(x:np.ndarray) -> np.ndarray:
 
 
 def softmax_layer(x:np.ndarray) -> np.ndarray:
-    exp_x = np.exp(x) # (B,DIM ) 
+    max_x  = np.max(x,axis=1)
+    x_normalized = x-max_x
+    exp_x = np.exp(x_normalized) # (B,DIM ) 
     sums = 1 / np.sum(exp_x,axis = 1) # (B,)
     return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
@@ -111,14 +113,6 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
 
 
 
-""""
-
-Future :  
-    - keepdims avoid doing doing [:,None]
-    - substracting max for numerical stability
-    - caching for backward pass
-    - softmax implementation  
-"""
 
 
 """
