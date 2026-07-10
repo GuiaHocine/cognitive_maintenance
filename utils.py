@@ -25,9 +25,8 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
     return np.average(losses,axis = 0)
     
     """
-
-    log_y_hat = np.log(y_pred) # natural logarithmic for efficiency (nats)
-    y_hat = np.clip(log_y_hat,1e-15 , 1.0 - 1e-15)
+    y_pred = np.clip(y_pred,1e-15 , 1.0 - 1e-15)
+    y_hat = np.log(y_pred) # natural logarithmic for efficiency (nats)
 
     if option == 1: 
         computations = (-y_true)*y_hat # (B,nbr_classes) --> element wise multiplication
@@ -47,6 +46,7 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
 
   
 def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
+    
     return - (y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))
 
 def mlp_layer(x:np.ndarray,W:np.ndarray)->np.ndarray:
@@ -75,7 +75,7 @@ def relu_layer_grad(x:np.ndarray)->np.ndarray:
 
 
 def sigmoid_layer(x:np.ndarray) -> np.ndarray:
-    output = (np.exp(x) / np.exp(x) + 1)
+    output = np.exp(x) / (np.exp(x) + 1)
     return output
 
 def sigmoid_layer_grad(x:np.ndarray) -> np.ndarray:

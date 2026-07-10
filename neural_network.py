@@ -7,9 +7,11 @@ x ---> mlp --->relu--->mlp--->softmax--->cross entropy loss
 """
 import numpy as np 
 from utils import mlp_layer,mlp_layer_grad_W,mlp_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward
+import json 
+
 
 DIM = 2
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 DIM_1 = 10
 DIM_2 = 2
 
@@ -78,39 +80,6 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     return True
 
 
-"""
-
-
-to DO :  switch to different thinking mode for backward add an axis at the end would really help , same logic as one sample derivative 
-
-"""
-
-""""w
-
-x -->x1---->z1---->x2--->z2---->L
-(dim,1) (dim1,1)  (dim2,1) (dim2,1)  scalar
-
-
-    Vector mode :                                                    Batch Mode: 
-
-dL/dz2 ---> (dim2,1)                                                |   dL/dz2 --->(B,DIM2)
-dz2/dx2 --> (dim2,dim2)                                             |   dz2/dx2 -->(B,DIM2,DIM2)
-dL/dx2 --> dz2/dx2 @ dL/dz2 =  (dim2,dim2) @ (dim2,1) -> (dim2,1)   |   dL/dx2 = dz2/dx2 @ dL/dz2 =  (B,dim2,dim2) @ (B,dim2) -> (B,dim2)
-dx2/dz1 --> (dim1,dim2) = W1.T                                      |   dx2/dz1 --> (B,dim1,dim2) = W1 
-dL/dz1 -> dx2/dz1 @ dL/dx2 = (dim1,dim2) @ (dim2,1) -> (dim1,1)     |   dL/dz1 -> dx2/dz1 @ dL/dx2 = (B,dim1,dim2) @ (B,dim2) -> (B,dim1) 
-dx2/dw1 = (1,dim1)                                                  |   dx2/dw1 = (B,dim1)  
-dL/W1 = dL/dx2 @ dx2/dW1  =  (dim2,1) @ (1,dim1)  = (dim2,dim1)     |   dL/W1 = dx2/dW1 @ dL/dx2   =  (B,dim1) @ (B,dim2) (with broadcasting) = (B,dim1,dim2)
-                                                                    |   dz1/dx1 --> (B,DIM1)
-                                                                    |   dx1/dW -->(B,dim)
-                                                                        dL/x1 = dz1/dx1 * dL/dz1 = (B,DIM1) * (B,DIM1 ) -> (B,DIM1)
-                                                                        dL/dw = (B,dim) @ (B,dim1) (with broadcastin last axis) -> (B,DIM,DIM1)
-
-                                                                        
- 
-
-"""
-
-
 
 
 
@@ -125,18 +94,24 @@ dumb rule : (x1,x2,0) --> if x1>x2  y = 1 else y = 0
 """
 
 X = np.random.randn(1000,2)
-column_1 = ((X[:,0]>X[:,1]).astype(int))
+column_1 = ((X[:,0]> X[:,1]).astype(int))
 column_2 =  ((X[:,1]>X[:,0]).astype(int))
 Y = np.stack((column_1,column_2),axis=1)
 
 
-for i in range (0,len(X),BATCH_SIZE):
-    x =  X[i:BATCH_SIZE]
-    y_true =  Y[i:BATCH_SIZE]
-    loss = forward_pass(x,y_true)
-    print(loss)
-    backward_pass(y_true,cache)
 
+epochs = 30
+for j in range(epochs):
+    losses = []
+    for i in range (0,len(X),BATCH_SIZE):
+        x =  X[i:i+BATCH_SIZE]
+        y_true =  Y[i:i+BATCH_SIZE]
+        loss = forward_pass(x,y_true)
+        losses.append(loss)
+        backward_pass(y_true,cache)
+
+    losses = np.array(losses)
+    print(np.mean(losses))
 
 
 
