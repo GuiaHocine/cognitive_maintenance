@@ -122,14 +122,29 @@ Transformer implementation architecture
 
 
 
+
 # VOCAB_SIZE = 50000
-# DIM = 128
 # SEQ_LENGTH = 1024
 # BATCH_SIZE = 32
 # INPUT : (BATCH,SEQ_LENGTH)
 
 def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
-    return x[...,None] @ w  # (BATCH,SEQ_LENGTH,1) @ (1,VOCAB_ISZE) = (BATCH,SEQ_LENGTH,VOCAB_SIZE)
+    """
+    x -> (BATCH_SIZE,SEQ_LENGTH)
+    w -> (VOCAB_SIZE,DIM)
+
+
+    x:(BATCH_SIZE,SEQ_LENGTH) ---> y:(BATCH_SIZE,SEQ_LENGTH,DIM)
+    
+    """
+
+    BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE  = x.shape[0] , x.shape[1], w.shape[0]
+    z = np.zeros((BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE))
+    z[:,np.arange(SEQ_LENGTH),x] = 1 # indexing
+
+    return z @ w  # (BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE) @ (VOCAB_SIZE,DIM ) -> (BATCH,SEQ_LENGTH,DIM)
+
+
 
 def query_proj(x:np.ndarray,w:np.ndarray) -> np.ndarray:
     return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
@@ -147,3 +162,19 @@ def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
     # (BATCH,SEQ LEN ,SEQ LEN )
     query 
 
+
+
+
+# (BATCH,SEQ LENGTH ) ---> ( BATCH, SEQ LENGTH , DIM )
+
+# ( LENGTH , 1  ) (VOCAB_SIZE , DIM)
+
+
+
+# (10,12,13,14,26)  I want 10 to be  replaced by w[10,:]
+
+# (SEQ LENGTH, VOCAB_SIZE )  @ (VOCAB_SIZE ,DIM)
+
+# 
+    
+ 

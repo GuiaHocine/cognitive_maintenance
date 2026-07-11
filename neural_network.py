@@ -7,12 +7,11 @@ x ---> mlp --->relu--->mlp--->softmax--->cross entropy loss
 """
 import numpy as np 
 from utils import mlp_layer,mlp_layer_grad_W,mlp_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward
-import json 
 
 
 DIM = 2
-BATCH_SIZE = 128
-DIM_1 = 10
+BATCH_SIZE = 16
+DIM_1 = 5
 DIM_2 = 2
 
 
@@ -33,6 +32,8 @@ cache = {
 gradients = {
 }
 
+
+# x--->x1--->z1---->x2--->z2--->L
 def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
     cache["0"][0] = x
     w = cache["0"][1]
@@ -47,6 +48,9 @@ def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
     cache["2"][0]=z2
     loss = cross_entropy_loss(y_pred=z2,y_true=y_true)
     return loss
+
+
+
 
 def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
 
@@ -74,8 +78,8 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     Params update using gradient descent 
     
     """
-    cache["0"][1] =  cache["0"][1] -alpha * np.sum(gradients["dL/dw"],axis=0)
-    cache["1"][1] =  cache["1"][1] - alpha * np.sum(gradients["dL/dw1"],axis=0)
+    cache["0"][1] =  cache["0"][1] -alpha * np.average(gradients["dL/dw"],axis=0)
+    cache["1"][1] =  cache["1"][1] - alpha * np.average(gradients["dL/dw1"],axis=0)
                                                                 
     return True
 
@@ -93,14 +97,14 @@ dumb rule : (x1,x2,0) --> if x1>x2  y = 1 else y = 0
 
 """
 
-X = np.random.randn(1000,2)
+X = np.random.randn(10000,2)
 column_1 = ((X[:,0]> X[:,1]).astype(int))
 column_2 =  ((X[:,1]>X[:,0]).astype(int))
 Y = np.stack((column_1,column_2),axis=1)
 
 
 
-epochs = 30
+epochs = 100
 for j in range(epochs):
     losses = []
     for i in range (0,len(X),BATCH_SIZE):
