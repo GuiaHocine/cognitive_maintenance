@@ -12,6 +12,23 @@ np.stack (d1,1) (d1,1) -->(d1,2)
 np.clip for numerical stability(x,min,max)
 we want to multiply (B,DIM) by (B,) :  x[:,None] add a dimension -> automatic broadcasting --> matrix element wise mutliplication
 keepdims = True  equivalent to x[:,None]
+advanced indexing rule : (same shape or broadcast to the same shape )
+np.where(condition,true,false) 
+reshape and tranpose change the meta data(shape&stride) of array not the physical object
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 HOW : Procedural mode for now , maybe switching in oop in the future

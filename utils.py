@@ -65,7 +65,7 @@ def mlp_grad(cache:np.ndarray) -> np.ndarray:
     dx,dw = cache[1],cache[0]
 
 def relu_layer(x:np.ndarray) -> np.ndarray:
-    output =  (x>0).astype(int) *  x 
+    output =  (x>0) *  x 
     return output
 
 def relu_layer_grad(x:np.ndarray)->np.ndarray:
@@ -140,27 +140,33 @@ def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
 
     BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE  = x.shape[0] , x.shape[1], w.shape[0]
     z = np.zeros((BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE))
-    z[:,np.arange(SEQ_LENGTH),x] = 1 # indexing
+    batch_array = np.arange(BATCH_SIZE)[:,None] #(BATCH_SIZE,1)
+    seq_array = np.arange(SEQ_LENGTH)[None,:] # (1,SEQ_LENGTH)
+    z[batch_array,seq_array,x] = 1 # advanced indexing rule : (same shape or broadcast to the same shape )
 
     return z @ w  # (BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE) @ (VOCAB_SIZE,DIM ) -> (BATCH,SEQ_LENGTH,DIM)
 
 
 
 def query_proj(x:np.ndarray,w:np.ndarray) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
+    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
 
 
 def key_proj(x:np.ndarray,w) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
-    
+    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
 
 def value_proj(x:np.ndarray,w) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,VOCAB_SIZE) @ (VOCAB_SIZE,VOCAB_DIM) = (BATCH,SEQ LEN,VOCAB DIM)
-
+    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
 
 def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
-    # (BATCH,SEQ LEN ,SEQ LEN )
-    query 
+    
+    key = np.transpose(key,(0,-1,-2))  # (BATCH,DIM1,SEQ_LEN)
+    attn_matrix = query @ key # (BATCH,SEQ_LEN,SEQ_LEN)attn_matrix
+    a = np.arange(query.shape[-2])
+    high_triag_mask = (a[:,None] >= a[None,:]) 
+    high_triag_mask = high_triag_mask[None,:] # add axis for broadcasting next
+    normalized_diag_attn_matrix = np.where(high_triag_mask, attn_matrix,-np.inf)
+    return normalized_diag_attn_matrix
 
 
 
