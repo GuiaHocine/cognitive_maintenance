@@ -48,8 +48,8 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
 
   
 def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
-    
-    return - (y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))
+    B = y_pred.shape[-1]
+    return - ((y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))) / B
 
 def mlp_layer(x:np.ndarray,W:np.ndarray)->np.ndarray:
     
@@ -95,7 +95,7 @@ def softmax_layer(x:np.ndarray) -> np.ndarray:
     x_normalized = x-max_x[...,None]
     exp_x = np.exp(x_normalized) # (B,DIM ) 
     sums = 1 / np.sum(exp_x,axis = -1) # (B,)
-    return (sums[:,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
+    return (sums[...,None] * exp_x)  # (B,1) * (B,DIM) ---> (B,DIM) * (B,DIM) --> (B,DIM)  Virtual Broadcasting
 
 def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
     """
@@ -130,6 +130,19 @@ Transformer implementation architecture
 # BATCH_SIZE = 32
 # INPUT : (BATCH,SEQ_LENGTH)
 
+
+def layer_norm(x:np.ndarray) -> np.ndarray:
+    
+    # (BATCH_SIZE,DIM) or (BATCH_SIZE,SEQ_LENGTH,DIM)
+    means = np.mean(x,axis=-1)[...,None]
+    variance = np.var(x,axis=-1)[...,None]
+
+    x_normalized = (x-means) / np.sqrt(variance + 1e-10)
+
+    return x_normalized
+
+
+
 def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
     """
     x -> (BATCH_SIZE,SEQ_LENGTH)
@@ -158,28 +171,51 @@ def value_proj(x:np.ndarray,w) -> np.ndarray:
     return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
 
 def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
-    
+    scale = np.sqrt(query.shape[-1])
     key = np.transpose(key,(0,-1,-2))  # (BATCH,DIM1,SEQ_LEN)
-    attn_matrix = query @ key # (BATCH,SEQ_LEN,SEQ_LEN)attn_matrix
+    attn_matrix = (query @ key ) / scale # (BATCH,SEQ_LEN,SEQ_LEN)attn_matrix
     a = np.arange(query.shape[-2])
-    high_triag_mask = (a[:,None] >= a[None,:]) 
-    high_triag_mask = high_triag_mask[None,:] # add axis for broadcasting next
-    normalized_diag_attn_matrix = np.where(high_triag_mask, attn_matrix,-np.inf) # never use the data to determine what should be masked
-    return normalized_diag_attn_matrix
+    low_triag_mask = (a[:,None] >= a[None,:]) 
+    low_triag_mask = low_triag_mask[None,:] # add axis for broadcasting next
+    normalized_diag_attn_matrix = np.where(low_triag_mask, attn_matrix,-np.inf) # never use the data to determine what should be masked
+    return softmax_layer(normalized_diag_attn_matrix)
 
-def layer_norm(x:np.ndarray) -> np.ndarray:
+
+def hidd_udpates(attention_matrix:np.ndarray,v:np.ndarray)->np.ndarray:
+    # (BATCH,SEQ_LEN,SEQ_LEN) & (BATCH,SEQ_LEN,DIM1) -> (BATCH,SEQ_LEN,DIM1)
+
+    return attention_matrix @ v
+
+def SHA(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray)->np.ndarray:
     
-    # (BATCH_SIZE,DIM) or (BATCH_SIZE,SEQ_LENGTH,DIM)
     
-    """"
-    
-    TO IMPLEMENT  
-    
+    q_proj = query_proj(x,q)
+    k_proj = key_proj(x,k)
+    v_proj = value_proj(x,v)
+
+    attn_matrix = attention_matrix(k_proj,q_proj)
+    y = hidd_udpates(attn_matrix,v_proj)
+    return y 
+
+def decoder_layer(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray,W_proj:np.ndarray) -> np.ndarray:
     """
+    original paper : we will follow the POST_LAYER_NORM  even tough it is unstable and industry has  swtiched to PRE-LAYER-NORM
+    """
+    
+    x_update =  SHA(x,q,k,v)
+    x = layer_norm (x + x_update)
+    x_proj = mlp_layer(x,W_proj)
+    y = layer_norm(x_proj + x )
 
-    means = np.mean(x,axis=-1)[...,None]
-    variance = np.var(x,axis=-1)[...,None]
+    return y
 
-    x_normalized = (x-means) / np.sqrt(variance + 1e-10)
 
-    return x_normalized
+""""
+to DO:
+
+
+mlp_layer should contain non-linearity
+move to multi head : a linear projection should be implemented 
+
+
+"""
