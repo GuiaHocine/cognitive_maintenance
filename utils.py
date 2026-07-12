@@ -6,6 +6,8 @@ def MSE(y_pred:np.ndarray,y_true:np.ndarray)->float:
     error = y_pred-y_true
     return np.average((error**2),axis=0)
 
+def MSE_backward(y_pred:np.ndarray,y_true:np.ndarray)->np.ndarray:
+    return 2/y_pred.shape[0] * (y_pred-y_true)
 
 def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->float:
     """
@@ -132,10 +134,7 @@ def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
     """
     x -> (BATCH_SIZE,SEQ_LENGTH)
     w -> (VOCAB_SIZE,DIM)
-
-
     x:(BATCH_SIZE,SEQ_LENGTH) ---> y:(BATCH_SIZE,SEQ_LENGTH,DIM)
-    
     """
 
     BATCH_SIZE,SEQ_LENGTH,VOCAB_SIZE  = x.shape[0] , x.shape[1], w.shape[0]
@@ -165,22 +164,22 @@ def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
     a = np.arange(query.shape[-2])
     high_triag_mask = (a[:,None] >= a[None,:]) 
     high_triag_mask = high_triag_mask[None,:] # add axis for broadcasting next
-    normalized_diag_attn_matrix = np.where(high_triag_mask, attn_matrix,-np.inf)
+    normalized_diag_attn_matrix = np.where(high_triag_mask, attn_matrix,-np.inf) # never use the data to determine what should be masked
     return normalized_diag_attn_matrix
 
-
-
-
-# (BATCH,SEQ LENGTH ) ---> ( BATCH, SEQ LENGTH , DIM )
-
-# ( LENGTH , 1  ) (VOCAB_SIZE , DIM)
-
-
-
-# (10,12,13,14,26)  I want 10 to be  replaced by w[10,:]
-
-# (SEQ LENGTH, VOCAB_SIZE )  @ (VOCAB_SIZE ,DIM)
-
-# 
+def layer_norm(x:np.ndarray) -> np.ndarray:
     
- 
+    # (BATCH_SIZE,DIM) or (BATCH_SIZE,SEQ_LENGTH,DIM)
+    
+    """"
+    
+    TO IMPLEMENT  
+    
+    """
+
+    means = np.mean(x,axis=-1)[...,None]
+    variance = np.var(x,axis=-1)[...,None]
+
+    x_normalized = (x-means) / np.sqrt(variance + 1e-10)
+
+    return x_normalized
