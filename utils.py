@@ -51,17 +51,21 @@ def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
     B = y_pred.shape[-1]
     return - ((y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))) / B
 
-def mlp_layer(x:np.ndarray,W:np.ndarray)->np.ndarray:
+def mlp_layer(x:np.ndarray,W:np.ndarray,b:np.ndarray)->np.ndarray:
     
-    output = x@W  # (B,dim) @ (dim,dim_output) -> (B,dim_output)
+    output = x@W  + b[None,...] # (B,dim) @ (dim,dim_output) -> (B,dim_output) + (1,dim_output) = (B,dim_output)
     return output
 
 def mlp_layer_grad_W(cache:np.ndarray)->np.ndarray:
     return cache[0] #(B,DIM)
 
 
-def mlp_layer_grad_x(cache:np.ndarray)->np.ndarray:
+def mlp_layer_grad_x(cache:np.ndarray)-> np.ndarray:
     return (cache[1]) #(dim,dim_output)
+
+def mlp_layer_grad_b(cache:np.ndarray) -> np.ndarray:    
+    return np.ones(cache[-1].shape[0])
+
 
 def mlp_grad(cache:np.ndarray) -> np.ndarray:
     dx,dw = cache[1],cache[0]
@@ -113,6 +117,13 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
     output = off_diag + on_diag # (B,DIM,DIM)
     return output # (B,DIM,DIM)
 
+
+
+"""
+
+
+
+"""
 
 
 

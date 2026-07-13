@@ -6,7 +6,8 @@ x ---> mlp --->relu--->mlp--->softmax--->cross entropy loss
 
 """
 import numpy as np 
-from utils import mlp_layer,mlp_layer_grad_W,mlp_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward
+from utils import mlp_layer,mlp_layer_grad_W,mlp_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward,mlp_layer_grad_b
+
 
 
 DIM = 2
@@ -17,19 +18,23 @@ DIM_2 = 2
 
 x = np.random.randn(BATCH_SIZE,DIM)
 w = np.random.randn(DIM,DIM_1)
+b = np.random.randn(DIM_1)
 w1 = np.random.randn(DIM_1,DIM_2)
+b1 =  np.random.randn(DIM_2)
 y_true = np.random.randn(BATCH_SIZE,DIM_2)
 
 
 cache = {
-    "0":[None,w],
+    "0":[None,w,b],
     "x1":None,
-    "1":[None,w1],
+    "1":[None,w1,b1],
     "x2":None,
-    "2":[None,None],
+    "2":[None,None,None],
 }
 
 gradients = {
+
+
 }
 
 
@@ -37,12 +42,14 @@ gradients = {
 def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
     cache["0"][0] = x
     w = cache["0"][1]
-    x1 = mlp_layer(x,w)
+    b = cache["0"][2]
+    x1 = mlp_layer(x,w,b)
     cache["x1"] = x1
     z1 = relu_layer(x1)
     cache["1"][0] = z1
     w1=cache["1"][1]
-    x2= mlp_layer(z1,w1)
+    b1 = cache["1"][2]
+    x2= mlp_layer(z1,w1,b1)
     cache["x2"]=x2
     z2 = softmax_layer(x2)
     cache["2"][0]=z2
@@ -51,7 +58,7 @@ def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
 
 
 
-
+# x--->x1--->z1---->x2--->z2--->L
 def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
 
     """
@@ -61,31 +68,34 @@ def backward_pass(y_true:np.ndarray,cache:dict,alpha=1e-3):
     z2 =  cache["2"][0]
     z1 =  cache["1"][0]
 
-    gradients["dL/dz2"] = cross_entropy_backward(y_true,z2) #(B,DIM2) DONE 
+    gradients["dL/dz2"] = cross_entropy_backward(y_true,z2) #(B,DIM2) DONE
     gradients["dz2/dx2"] = softmax_layer_grad(z2) # (B,DIM2,DIM2) DONE 
     gradients["dx2/dz1"] = mlp_layer_grad_x(cache["1"])# (DIM1,DIM2)
     gradients["dx2/dw1"] = mlp_layer_grad_W(cache["1"]) # (B,DIM1)
+    gradients["dx2/db1"] =  mlp_layer_grad_b(cache["1"]) # (DIM2,) should be (B,DIM2) but we broadcast to save memory
     gradients["dz1/dx1"] = relu_layer_grad(z1) # (B,DIM1)
     gradients["dx1/dw"] = mlp_layer_grad_W(cache["0"]) # (B,DIM)
+    gradients["dx1/db"] = mlp_layer_grad_b(cache["0"]) # (DIM1,) should be (B,DIM2) but we broadcast to save memory
 
     # (DIM1,DIM2) et (B,DIM2)
     gradients["dL/dx2"] = np.squeeze(gradients["dz2/dx2"] @ (gradients["dL/dz2"][...,None]),axis=-1) # (B,DIM2,DIM2) @ (B,DIM2,1) = (B,DIM2,1) ->(B,DIM2) DONE
     gradients["dL/dw1"] = gradients["dx2/dw1"][...,None]  @ gradients["dL/dx2"][...,None,:]  #(B,DIM1,DIM2) = (B,DIM1,1) @ (B,1,DIM2) =(B,DIM1,DIM2) 
+    gradients["dL/db1"] = gradients["dx2/db1"][None,...]  * gradients["dL/dx2"] # (B,DIM2) = (1,DIM2) * (B,DIM2) =(B,DIM2) 
     gradients["dL/dz1"] = gradients["dL/dx2"] @ gradients["dx2/dz1"].T # (B,dim2) @ (dim1,dim2).T # (B,DIM1)
-    gradients["dL/dx1"] = gradients["dz1/dx1"] * gradients["dL/dz1"] # (B,DIM1)
+    gradients["dL/dx1"] = gradients["dz1/dx1"] * gradients["dL/dz1"] # (B,DIM1) * (B,DIM1) HADAMART PRODUCT BECAUSE RELU IS ELEMENT WISE
     gradients["dL/dw"] = gradients["dx1/dw"][...,None]  @ gradients["dL/dx1"][...,None,:]  # (B,DIM,1 )@(B,1,DIM1 )= (B,DIM,DIM1) 
+    gradients["dL/db"] = gradients["dx1/db"][None,...]  * gradients["dL/dx1"] # (B,DIM1) = (1,DIM1) * (B,DIM1) =(B,DIM1) 
+    
     """
     Params update using gradient descent 
     
     """
     cache["0"][1] =  cache["0"][1] -alpha * np.average(gradients["dL/dw"],axis=0)
+    cache["0"][2] =  cache["0"][2] -alpha * np.average(gradients["dL/db"],axis=0)
     cache["1"][1] =  cache["1"][1] - alpha * np.average(gradients["dL/dw1"],axis=0)
-                                                                
+    cache["1"][2] =  cache["1"][2] - alpha * np.average(gradients["dL/db1"],axis=0)                                                           
+    
     return True
-
-
-
-
 
 
 
