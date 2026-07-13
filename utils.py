@@ -209,6 +209,17 @@ def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict =
 
 
 
+def train(BATCH_SIZE:int,X:np.ndarray,Y:np.ndarray,config:dict,cache:dict):
+    losses = []
+    for i in range (0,len(X),BATCH_SIZE):
+        x =  X[i:i+BATCH_SIZE]
+        y_true =  Y[i:i+BATCH_SIZE]
+        loss = pass_forward(x,y_true,config=config,cache=cache)
+        losses.append(loss)
+        pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)
+    losses = np.array(losses)
+    print(np.mean(losses))
+
 """
 Transformer implementation architecture 
 

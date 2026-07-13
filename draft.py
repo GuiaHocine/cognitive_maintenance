@@ -13,9 +13,10 @@ from utils import linear_layer,linear_layer_grad_W,linear_layer_grad_x,softmax_l
 
 
 DIM = 2
-BATCH_SIZE = 16
-DIM_1 = 5
-DIM_2 = 2
+BATCH_SIZE = 32
+DIM_1 = 8
+DIM_2 = 4
+DIM_3 = 2
 
 
 config = {
@@ -29,12 +30,12 @@ config = {
     'nn_arch' : 
     [
         [['linear', DIM_1],['ReLu', DIM_1]],
-        [['linear', DIM_2],['softmax', DIM_2]]
+        [['linear', DIM_2],['ReLu', DIM_2]],
+        [['linear', DIM_3],['softmax', DIM_3]]
 
     ]   
     
     }
-
 
 
 
@@ -145,3 +146,27 @@ y_true =  Y[i:i+BATCH_SIZE]
 loss = pass_forward(x,y_true,config=config,cache=cache)
 #backward_pass(y_true,cache)
 pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)"""
+
+
+
+
+
+
+"""
+def forward_pass(x:np.ndarray,y_true:np.ndarray) -> float:
+    cache["0"][0] = x
+    w = cache["0"][1]
+    b = cache["0"][2]
+    x1 = linear_layer(x,w,b)
+    cache["x1"] = x1
+    z1 = relu_layer(x1)
+    cache["1"][0] = z1
+    w1=cache["1"][1]
+    b1 = cache["1"][2]
+    x2 = linear_layer(z1,w1,b1)
+    cache["x2"]=x2
+    z2 = softmax_layer(x2)
+    cache["2"][0]=z2
+    loss = cross_entropy_loss(y_pred=z2,y_true=y_true)
+    return loss
+"""
