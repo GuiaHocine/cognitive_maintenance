@@ -6,7 +6,7 @@ x ---> linear --->relu--->linear--->softmax--->cross entropy loss
 
 """
 import numpy as np 
-from utils import linear_layer,linear_layer_grad_W,linear_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward,linear_layer_grad_b,weights_init,pass_forward
+from utils import linear_layer,linear_layer_grad_W,linear_layer_grad_x,softmax_layer,softmax_layer_grad,relu_layer,relu_layer_grad,cross_entropy_loss,cross_entropy_backward,linear_layer_grad_b,weights_init,pass_forward,pass_backward
 
 
 
@@ -122,7 +122,6 @@ column_2 =  ((X[:,1]>X[:,0]).astype(int))
 Y = np.stack((column_1,column_2),axis=1)
 
 
-
 epochs = 100
 for j in range(epochs):
     losses = []
@@ -131,11 +130,18 @@ for j in range(epochs):
         y_true =  Y[i:i+BATCH_SIZE]
         loss = pass_forward(x,y_true,config=config,cache=cache)
         losses.append(loss)
-        backward_pass(y_true,cache)
-
+        #backward_pass(y_true,cache)
+        pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)
     losses = np.array(losses)
     print(np.mean(losses))
 
 
 
 
+"""
+i = 0
+x =  X[i:i+BATCH_SIZE]
+y_true =  Y[i:i+BATCH_SIZE]
+loss = pass_forward(x,y_true,config=config,cache=cache)
+#backward_pass(y_true,cache)
+pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)"""

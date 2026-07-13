@@ -155,7 +155,7 @@ def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type
         if archi[i][0][0] == 'linear':  # other functions can be implemented
             xi= linear_layer(input,w,b)
         cache[f"x{i+1}"] = xi
-        if archi[i][1][0] == 'ReLu':
+        if archi[i][1][0] == 'ReLu': # other activations can be implemented also
             zi = relu_layer(xi)
         elif archi[i][1][0] == 'softmax':
              zi = softmax_layer(xi)
@@ -166,6 +166,47 @@ def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type
         loss = cross_entropy_loss(y_pred=input,y_true=y_true)
 
     return loss
+
+
+def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict = None,loss_type:str = 'CrossEntropyLoss',alpha = 1e-3):
+    
+    if gradients is None:
+        gradients = {}    # avoid default mutable trap
+    inverted_cache = dict(reversed(list(cache.items())[1:])) # inverse the dictionnary
+    arch_config = [layer[0] for block in arch_config for layer in block]
+    last_key = list(cache)[-1]
+    if loss_type == 'CrossEntropyLoss':
+        gradients[f"dL/dz{last_key}"] = cross_entropy_backward(y_true,cache[last_key][0])
+    
+    for i,j in zip(inverted_cache,np.arange(len(arch_config))[1:][::-1]):
+        """if (j == 0) and (loss_type == 'CrossEntropyLoss'):  # * this should be re worked in the future , we dont want to evaluate the condition at each layer * 
+            gradients[f"dL/dz{i}"] = cross_entropy_backward(y_true,cache[i][0])
+            gradients[f"dz{i}/dx{i}"] = softmax_layer_grad(cache[i]|0)
+            gradients[f"dL/dx{i}"] = np.squeeze(gradients["dz{i}/dx{i}"] @ (gradients["dL/dz{i}"][...,None]),axis=-1) # (B,DIM2,DIM2) @ (B,DIM2,1) = (B,DIM2,1) ->(B,DIM2) DONE
+            j=j+1"""
+        
+        if type(cache[i]) is np.ndarray:
+            i_suffix = int((i[1:]))
+            if arch_config[(j)] == 'linear':
+                gradients[f"d{i}/dz{(i_suffix)-1}"]  = linear_layer_grad_x(cache[str(i_suffix-1)])
+                gradients[f"d{i}/dw{(i_suffix)-1}"] = linear_layer_grad_W(cache[str(i_suffix-1)]) 
+                gradients[f"d{i}/db{(i_suffix)-1}"] =  linear_layer_grad_b(cache[str(i_suffix-1)])
+
+                gradients[f"dL/dw{(i_suffix)-1}"] = gradients[f"d{i}/dw{i_suffix-1}"][...,None]  @ gradients[f"dL/d{i}"][...,None,:]
+                gradients[f"dL/db{(i_suffix)-1}"] = gradients[f"d{i}/db{i_suffix-1}"][None,...]  * gradients[f"dL/d{i}"]
+                gradients[f"dL/dz{(i_suffix)-1}"] = gradients[f"dL/d{i}"] @ gradients[f"d{i}/dz{i_suffix-1}"].T 
+
+        
+                cache[str(i_suffix-1)][1] = cache[str(i_suffix-1)][1] - alpha * np.average(gradients[f"dL/dw{(i_suffix)-1}"],axis=0)
+                cache[str(i_suffix-1)][2] = cache[str(i_suffix-1)][2] - alpha * np.average(gradients[f"dL/db{(i_suffix)-1}"],axis=0)
+        else:
+            if arch_config[(j)] == 'softmax':
+                gradients[f"dz{i}/dx{i}"] = softmax_layer_grad(cache[i][0])
+                gradients[f"dL/dx{i}"] = np.squeeze(gradients[f"dz{i}/dx{i}"] @ (gradients[f"dL/dz{i}"][...,None]),axis=-1)
+            if arch_config[(j)] == 'ReLu':
+                gradients[f"dz{i}/dx{i}"] = relu_layer_grad(cache[i][0])
+                gradients[f"dL/dx{i}"] = gradients[f"dz{i}/dx{i}"] * gradients[f"dL/dz{i}"]
+
 
 
 """
