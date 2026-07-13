@@ -51,23 +51,23 @@ def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
     B = y_pred.shape[-1]
     return - ((y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))) / B
 
-def mlp_layer(x:np.ndarray,W:np.ndarray,b:np.ndarray)->np.ndarray:
+def linear_layer(x:np.ndarray,W:np.ndarray,b:np.ndarray)->np.ndarray:
     
     output = x@W  + b[None,...] # (B,dim) @ (dim,dim_output) -> (B,dim_output) + (1,dim_output) = (B,dim_output)
     return output
 
-def mlp_layer_grad_W(cache:np.ndarray)->np.ndarray:
+def linear_layer_grad_W(cache:np.ndarray)->np.ndarray:
     return cache[0] #(B,DIM)
 
 
-def mlp_layer_grad_x(cache:np.ndarray)-> np.ndarray:
+def linear_layer_grad_x(cache:np.ndarray)-> np.ndarray:
     return (cache[1]) #(dim,dim_output)
 
-def mlp_layer_grad_b(cache:np.ndarray) -> np.ndarray:    
+def linear_layer_grad_b(cache:np.ndarray) -> np.ndarray:    
     return np.ones(cache[-1].shape[0])
 
 
-def mlp_grad(cache:np.ndarray) -> np.ndarray:
+def linear_grad(cache:np.ndarray) -> np.ndarray:
     dx,dw = cache[1],cache[0]
 
 def relu_layer(x:np.ndarray) -> np.ndarray:
@@ -121,11 +121,51 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
 
 """
 
-
+PACKAGING UTILS FUNCTION
 
 """
 
 
+def weights_init(config:dict)->dict:  # so dirty need to be reworked 
+    input_dim = config["meta_data"]['input_dim']
+    nn_config = config['nn_arch']
+    length = len(nn_config)           
+    dims = [input_dim]
+    cache = {}           
+    for i,j in enumerate(nn_config):
+        if j[0][0] == 'linear':
+            w = np.random.randn(dims[-1],j[0][1])
+            b = np.random.randn(j[0][1])
+            cache[str(i)] = [None,w,b]
+            cache['x' +  str(i+1)] = None
+            dims.append(j[0][1])
+            if i == length-1:
+                cache[str(i+1)] = [None]*3
+    return cache
+
+
+def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type:str = 'CrossEntropyLoss') -> float:
+    archi = config['nn_arch']
+    depth = len(archi)
+    input = x 
+    for i in range(depth):
+        cache[str(i)][0] = input
+        w = cache[str(i)][1]
+        b = cache[str(i)][2]
+        if archi[i][0][0] == 'linear':  # other functions can be implemented
+            xi= linear_layer(input,w,b)
+        cache[f"x{i+1}"] = xi
+        if archi[i][1][0] == 'ReLu':
+            zi = relu_layer(xi)
+        elif archi[i][1][0] == 'softmax':
+             zi = softmax_layer(xi)
+        input = zi
+
+    cache[str(depth)] = [zi,None,None] # caching the last activation(softmax for example) for backward pass
+    if loss_type == 'CrossEntropyLoss':
+        loss = cross_entropy_loss(y_pred=input,y_true=y_true)
+
+    return loss
 
 
 """
@@ -215,7 +255,7 @@ def decoder_layer(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray,W_proj:np.
     
     x_update =  SHA(x,q,k,v)
     x = layer_norm (x + x_update)
-    x_proj = mlp_layer(x,W_proj)
+    x_proj = linear_layer(x,W_proj)
     y = layer_norm(x_proj + x )
 
     return y
@@ -225,7 +265,7 @@ def decoder_layer(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray,W_proj:np.
 to DO:
 
 
-mlp_layer should contain non-linearity
+linear_layer should contain non-linearity
 move to multi head : a linear projection should be implemented 
 
 
