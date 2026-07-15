@@ -125,6 +125,33 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
 
 
 
+def mlp_block(x:np.ndarray,archi:dict,cache:dict) -> np.ndarray:
+    
+    
+    depth = len(archi)
+    input = x 
+
+
+    zi_1 = input 
+    for i in range(depth):
+        cache[str(i)][0] = zi_1
+        w = cache[str(i)][1]
+        b = cache[str(i)][2]
+        if archi[i][0][0] == 'linear':  # other functions can be implemented
+            xi= linear_layer(zi_1,w,b)
+        cache[f"x{i+1}"] = xi
+        if archi[i][1][0] == 'ReLu': # other activations can be implemented also
+            zi = relu_layer(xi)
+        elif archi[i][1][0] == 'softmax':
+             zi = softmax_layer(xi)
+        zi_1 = zi
+
+    cache[str(depth)] = [zi_1,None,None] # caching the last activation(softmax for example) for backward pass
+    
+
+    return zi_1    
+    
+
 """
 
 PACKAGING UTILS FUNCTION
@@ -152,24 +179,11 @@ def weights_init(config:dict)->dict:  # so dirty need to be reworked
 
 def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type:str = 'CrossEntropyLoss') -> float:
     archi = config['nn_arch']
-    depth = len(archi)
-    input = x 
-    for i in range(depth):
-        cache[str(i)][0] = input
-        w = cache[str(i)][1]
-        b = cache[str(i)][2]
-        if archi[i][0][0] == 'linear':  # other functions can be implemented
-            xi= linear_layer(input,w,b)
-        cache[f"x{i+1}"] = xi
-        if archi[i][1][0] == 'ReLu': # other activations can be implemented also
-            zi = relu_layer(xi)
-        elif archi[i][1][0] == 'softmax':
-             zi = softmax_layer(xi)
-        input = zi
+    if config['meta_data']['block_type'] == 'mlp_block':
+        output = mlp_block(x,archi,cache)
 
-    cache[str(depth)] = [zi,None,None] # caching the last activation(softmax for example) for backward pass
     if loss_type == 'CrossEntropyLoss':
-        loss = cross_entropy_loss(y_pred=input,y_true=y_true)
+        loss = cross_entropy_loss(y_pred= output,y_true=y_true)
 
     return loss
 
@@ -200,7 +214,7 @@ def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict =
                 gradients[f"d{i}/dw{(i_suffix)-1}"] = linear_layer_grad_W(cache[str(i_suffix-1)]) 
                 gradients[f"d{i}/db{(i_suffix)-1}"] =  linear_layer_grad_b(cache[str(i_suffix-1)])
                 """
-                
+
                 gradients[f"d{i}/dz{(i_suffix)-1}"],gradients[f"d{i}/dw{(i_suffix)-1}"],gradients[f"d{i}/db{(i_suffix)-1}"] = linear_grad(cache[str(i_suffix-1)])
                 
 
