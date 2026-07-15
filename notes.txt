@@ -43,7 +43,7 @@ having those tools I will be able to  implement different architectures
 the backward engine remain the core,critical algorithm to implement
 
 (x>0).astype(int) ---> trick for relu
-np.transpose(0,1,2)  # return a view , thus modifying the view modify the original array
+np.transpose(0,1,2)   return a view , thus modifying the view modify the original array
 np.eyes(N=10)[None,...] ---> create identity 10*10 and add an axis
 
 
@@ -114,4 +114,36 @@ dL/W1 = dL/dx2 @ dx2/dW1  =  (dim2,1) @ (1,dim1)  = (dim2,dim1)     |   dL/W1 = 
                                                                         dL/dw = (B,dim) @ (B,dim1) (with broadcastin last axis) -> (B,DIM,DIM1)
 
 
-                                                                        
+
+TENSORS multiplication NOTES :
+
+
+import numpy as np
+
+
+CASE 1 : 2D@2D
+x = np.random.randn(SEQ_LENGTH,DIM) 
+w = np.random.randn( DIM , DIM_1)
+
+x@w  works (standard matrix multiplications) (SEQ_LENGTH,DIM) @ (DIM,DIM1) -> (SEQ_LENGTH,DIM1)
+
+
+CASE 2 : 3D@2D
+x = np.random.randn(BATCH_SIZE,SEQ_LENGTH,DIM) 
+w = np.random.randn( DIM , DIM_1)
+
+x@w  also works , numpy performs *batch_size standard matrix multiplications and stack them together
+    its a like a loop over np.arange(BATCH_SIZE ) and inside the loop a matrix multiplication is done  then stacking  
+        (BATCH_SIZE,SEQ_LENGTH,DIM) @ (DIM,DIM_1) = (BATCH_SIZE,DIM,DIM1)
+
+
+CASE 4:4D @ 3D  
+x = np.random.randn(BATCH_SIZE,HEADS,SEQ_LENGTH,DIM) 
+w = np.random.randn( HEADS,DIM ,DIM_1)
+x @ w  (BATCH_SIZE,HEADS,SEQ_LENGTH,DIM) @ ( HEADS,DIM ,DIM_1)
+    tell me if my logic is right here , it is a nested loop situation : here we loop over the first axis(batch)
+    then inside the batch loop we loop over the first axis of both tensors (HEADS axis) and perform standard
+    matrix multiplications. 
+
+
+other view : numpy see only the last  2 dimensions of both tensors , an loop over remaining ones while applying broadcasting ! 

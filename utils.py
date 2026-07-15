@@ -311,32 +311,32 @@ def embedding_look_up_table(x:np.ndarray,w ) -> np.ndarray:
 
 
 def query_proj(x:np.ndarray,w:np.ndarray) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
+    return x[:,None,...] @ w  # (BATCH,HEAD,SEQ_LEN,DIM) @ (HEAD,DIM,DIM1 ) -> (BATCH,HEAD,SEQ_LEN,,DIM1)
 
 
 def key_proj(x:np.ndarray,w) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
+    return x[:,None,...] @ w  # (BATCH,HEAD,SEQ_LEN,DIM) @ (HEAD,DIM,DIM1 ) -> (BATCH,HEAD,SEQ_LEN,,DIM1)
 
 def value_proj(x:np.ndarray,w) -> np.ndarray:
-    return x @ w  # (BATCH,SEQ_LEN,DIM) @ (DIM,DIM1 ) -> (BATCH,SEQ_LEN,DIM1)
+    return x[:,None,...] @ w # (BATCH,HEAD,SEQ_LEN,DIM) @ (HEAD,DIM,DIM1 ) -> (BATCH,HEAD,SEQ_LEN,,DIM1)
 
 def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
     scale = np.sqrt(query.shape[-1])
-    key = np.transpose(key,(0,-1,-2))  # (BATCH,DIM1,SEQ_LEN)
-    attn_matrix = (query @ key ) / scale # (BATCH,SEQ_LEN,SEQ_LEN)attn_matrix
+    key = np.swapaxes(key,-1,-2)  # (BATCH,HEAD,DIM1,SEQ_LEN)
+    attn_matrix = (query @ key ) / scale # (BATCH,HEAD,SEQ_LEN,SEQ_LEN) :attn_matrix
     a = np.arange(query.shape[-2])
     low_triag_mask = (a[:,None] >= a[None,:]) 
-    low_triag_mask = low_triag_mask[None,:] # add axis for broadcasting next
+    low_triag_mask = low_triag_mask[None,None,:] # add axis for broadcasting next
     normalized_diag_attn_matrix = np.where(low_triag_mask, attn_matrix,-np.inf) # never use the data to determine what should be masked
     return softmax_layer(normalized_diag_attn_matrix)
 
 
 def hidd_udpates(attention_matrix:np.ndarray,v:np.ndarray)->np.ndarray:
-    # (BATCH,SEQ_LEN,SEQ_LEN) & (BATCH,SEQ_LEN,DIM1) -> (BATCH,SEQ_LEN,DIM1)
+    # (BATCH,HEAD,SEQ_LEN,SEQ_LEN) & (BATCH,HEAD,SEQ_LEN,DIM1) -> (BATCH,HEAD,SEQ_LEN,DIM1)
 
-    return attention_matrix @ v
+    return np.mean(attention_matrix @ v,axis = 1)  # averaging over the heads , but we could do  an MLP 
 
-def SHA(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray)->np.ndarray:
+def MHA(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray)->np.ndarray:
     
     
     q_proj = query_proj(x,q)
@@ -352,7 +352,7 @@ def decoder_layer(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray,W_proj:np.
     original paper : we will follow the POST_LAYER_NORM  even tough it is unstable and industry has  swtiched to PRE-LAYER-NORM
     """
     
-    x_update =  SHA(x,q,k,v)
+    x_update =  MHA(x,q,k,v)
     x = layer_norm (x + x_update)
     x_proj = linear_layer(x,W_proj)
     y = layer_norm(x_proj + x )
