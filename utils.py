@@ -67,8 +67,14 @@ def linear_layer_grad_b(cache:np.ndarray) -> np.ndarray:
     return np.ones(cache[-1].shape[0])
 
 
-def linear_grad(cache:np.ndarray) -> np.ndarray:
-    dx,dw = cache[1],cache[0]
+def linear_grad(cache:np.ndarray) -> tuple[np.ndarray,np.ndarray,np.ndarray]:
+    dx = cache[1]
+    dW = cache[0]
+    db = np.ones(cache[-1].shape[0])
+
+    return dx,dW,db
+
+
 
 def relu_layer(x:np.ndarray) -> np.ndarray:
     output =  (x>0) *  x 
@@ -188,9 +194,17 @@ def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict =
         if type(cache[i]) is np.ndarray:
             i_suffix = int((i[1:]))
             if arch_config[(j)] == 'linear':
+                
+                """"
                 gradients[f"d{i}/dz{(i_suffix)-1}"]  = linear_layer_grad_x(cache[str(i_suffix-1)])
                 gradients[f"d{i}/dw{(i_suffix)-1}"] = linear_layer_grad_W(cache[str(i_suffix-1)]) 
                 gradients[f"d{i}/db{(i_suffix)-1}"] =  linear_layer_grad_b(cache[str(i_suffix-1)])
+                """
+                
+                gradients[f"d{i}/dz{(i_suffix)-1}"],gradients[f"d{i}/dw{(i_suffix)-1}"],gradients[f"d{i}/db{(i_suffix)-1}"] = linear_grad(cache[str(i_suffix-1)])
+                
+
+
 
                 gradients[f"dL/dw{(i_suffix)-1}"] = gradients[f"d{i}/dw{i_suffix-1}"][...,None]  @ gradients[f"dL/d{i}"][...,None,:]
                 gradients[f"dL/db{(i_suffix)-1}"] = gradients[f"d{i}/db{i_suffix-1}"][None,...]  * gradients[f"dL/d{i}"]
@@ -219,6 +233,25 @@ def train(BATCH_SIZE:int,X:np.ndarray,Y:np.ndarray,config:dict,cache:dict):
         pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)
     losses = np.array(losses)
     print(np.mean(losses))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 """
 Transformer implementation architecture 
