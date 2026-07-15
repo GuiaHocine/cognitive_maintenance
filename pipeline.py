@@ -21,7 +21,8 @@ config = {
     'meta_data':
     {
         'batch_size':BATCH_SIZE,
-        'input_dim':DIM
+        'input_dim':DIM,
+        'block_type':"mlp_block"
     },
 
     'nn_arch' : 
