@@ -11,7 +11,7 @@ from utils import linear_layer,linear_layer_grad_W,linear_layer_grad_x,softmax_l
 
 DIM = 2
 BATCH_SIZE = 32
-DIM_1 = 8
+DIM_1 = 4
 DIM_2 = 4
 DIM_3 = 2
 
@@ -35,6 +35,54 @@ config = {
     
     }
 
+""""
+
+
+config = {
+
+    'meta_data':
+    {
+        'batch_size':BATCH_SIZE,
+        'input_dim':DIM,
+
+    },
+
+    'nn_arch' : 
+    
+    {
+    
+        'mlp' :
+                                [
+                                    [['linear', DIM_1],['ReLu', DIM_1]],
+                                    [['linear', DIM_2],['ReLu', DIM_2]],
+                                    [['linear', DIM_3],['sigmoid', DIM_3]]
+
+                                ]   ,
+    
+    
+        'mlp' : 
+                                [
+                                    [['linear', DIM_1],['ReLu', DIM_1]],
+                                    [['linear', DIM_2],['ReLu', DIM_2]],
+                                    [['linear', DIM_3],['softmax', DIM_3]]
+
+                                ]  ,
+    
+
+        'MHA' : [None]
+    } 
+
+
+    } 
+
+
+
+Futur implementation handling multiblock 
+     
+"""
+
+
+
 cache = weights_init(config)
 
 X = np.random.randn(10000,2)
@@ -44,6 +92,6 @@ Y = np.stack((column_1,column_2),axis=1)
 
 
 
-epochs = 10
+epochs = 100
 for j in range(epochs):
     train(BATCH_SIZE,X,Y,config,cache)
