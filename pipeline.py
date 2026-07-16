@@ -49,7 +49,7 @@ config = {
 
     'nn_arch' : 
     
-    {
+    (
     
         'mlp' :
                                 [
@@ -70,7 +70,7 @@ config = {
     
 
         'MHA' : [None]
-    } 
+    ) 
 
 
     } 
