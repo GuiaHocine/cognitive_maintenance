@@ -48,7 +48,7 @@ def cross_entropy_loss(y_pred:np.ndarray,y_true:np.ndarray,option:int = 1)->floa
 
   
 def cross_entropy_backward(y_true:np.ndarray,y_pred:np.ndarray) -> np.ndarray:
-    B = y_pred.shape[-1]
+    B = y_pred.shape[0]
     return - ((y_true) * ( 1 / np.clip(y_pred,1e-15,1-1e-15))) / B
 
 def linear_layer(x:np.ndarray,W:np.ndarray,b:np.ndarray)->np.ndarray:
@@ -247,24 +247,6 @@ def train(BATCH_SIZE:int,X:np.ndarray,Y:np.ndarray,config:dict,cache:dict):
         pass_backward(cache,arch_config=config["nn_arch"],y_true=y_true)
     losses = np.array(losses)
     print(np.mean(losses))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 """

@@ -110,8 +110,8 @@ dx2/dw1 = (1,dim1)                                                  |   dx2/dw1 
 dL/W1 = dL/dx2 @ dx2/dW1  =  (dim2,1) @ (1,dim1)  = (dim2,dim1)     |   dL/W1 = dx2/dW1 @ dL/dx2   =  (B,dim1) @ (B,dim2) (with broadcasting) = (B,dim1,dim2)
                                                                     |   dz1/dx1 --> (B,DIM1,DIM1)
                                                                     |   dx1/dW -->(B,dim)
-                                                                        dL/x1 = dz1/dx1 @ dL/dz1 = (B,DIM1,DIM1) @ (B,DIM1 ) -> (B,DIM1)
-                                                                        dL/dw = (B,dim) @ (B,dim1) (with broadcastin last axis) -> (B,DIM,DIM1)
+                                                                    |    dL/x1 = dz1/dx1 @ dL/dz1 = (B,DIM1,DIM1) @ (B,DIM1 ) -> (B,DIM1)
+                                                                    |    dL/dw = (B,dim) @ (B,dim1) (with broadcastin last axis) -> (B,DIM,DIM1)
 
 
 
@@ -147,3 +147,23 @@ x @ w  (BATCH_SIZE,HEADS,SEQ_LENGTH,DIM) @ ( HEADS,DIM ,DIM_1)
 
 
 other view : numpy see only the last  2 dimensions of both tensors , an loop over remaining ones while applying broadcasting ! 
+
+
+
+
+
+BACKWARD METHOD: BLOC TYPE VS engine system
+
+
+BLOC TYPE : implementing the backward pass for every bloc we implement (what i am currently doing ) , a backward pass for MLP,FOR CONV,FOR MHA ect ... (complex) better iif writing a specialised kernel bloc for it 
+engine : forward agnostic , can compute gradients only by the forward no need to implement the backward for each block ,
+
+pytorch : fonctionne en mode hybride 
+
+autograd eager : bloc agnostic but need define the backward for heuristics (softmax,matmul) that have optimized kernels at a low level granularity , plus parralelisable
+torch.compile : by compiling the code we  create the code for backward explicitely (similar to what I do )
+
+flexibilité d’abord → capture du graphe → rigidification → optimisation
+un backward spécialisé peut battre un autograd eager générique
+
+compilation + autograd permet d’obtenir les deux avantages
