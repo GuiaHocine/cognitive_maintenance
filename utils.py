@@ -134,7 +134,6 @@ def mlp_block(x:np.ndarray,archi:dict,cache:dict,pad:int = 0) -> np.ndarray:
     zi_1 = input 
     for i in range(depth):
         cache[str(i+pad)][0] = zi_1
-        print(zi_1.shape)
         w = cache[str(i+pad)][1]
         b = cache[str(i+pad)][2]
         if archi[i][0][0] == 'linear':  # other functions can be implemented
@@ -151,11 +150,10 @@ def mlp_block(x:np.ndarray,archi:dict,cache:dict,pad:int = 0) -> np.ndarray:
 
         zi_1 = zi
 
-    print(zi_1.shape)
-    cache[str(depth-1+pad)] = [zi_1,None,None] # caching the last activation(softmax for example) for backward pass
+    cache[str(depth+pad)][0] = zi_1 # caching the last activation(softmax for example) for backward pass
     
 
-    return zi_1,depth    
+    return zi_1,depth + pad 
     
 
 """
@@ -204,7 +202,7 @@ def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type
     return loss
 
 
-def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict = None,loss_type:str = 'CrossEntropyLoss',alpha = 1e-3):
+def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict = None,loss_type:str = 'CrossEntropyLoss',alpha = 5e-4):
     
     if gradients is None:
         gradients = {}    # avoid default mutable trap
@@ -212,13 +210,12 @@ def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict =
     #arch_config = [layer[0] for block in arch_config for layer in block]
     activations = [ layer[0] for block in arch_config for sub_block in  arch_config[block] for layer in sub_block ]
     last_key = list(cache)[-1]
-    print(last_key)
 
 
     if loss_type == 'CrossEntropyLoss':
         gradients[f"dL/dz{last_key}"] = cross_entropy_backward(y_true,cache[last_key][0])
     
-    for i,j in zip(inverted_cache,np.arange(len(activations))[1:][::-1]):
+    for i,j in zip(inverted_cache, np.arange(len(activations))[::-1]):
 
         
         if type(cache[i]) is np.ndarray:

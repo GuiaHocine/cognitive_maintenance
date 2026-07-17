@@ -13,29 +13,7 @@ DIM = 2
 BATCH_SIZE = 32
 DIM_1 = 4
 DIM_2 = 4
-DIM_3 = 2
-
-
-config = {
-
-    'meta_data':
-    {
-        'batch_size':BATCH_SIZE,
-        'input_dim':DIM,
-        'block_type':"mlp_block"
-    },
-
-    'nn_arch' : 
-    [
-        [['linear', DIM_1],['ReLu', DIM_1]],
-        [['linear', DIM_2],['ReLu', DIM_2]],
-        [['linear', DIM_3],['softmax', DIM_3]]
-
-    ]   
-    
-    }
-
-""""
+DIM_3 = 8
 
 
 config = {
@@ -47,39 +25,35 @@ config = {
 
     },
 
-    'nn_arch' : 
+    'nn_arch': 
+    {
     
-    (
-    
-        'mlp' :
+        'mlp_1':
                                 [
                                     [['linear', DIM_1],['ReLu', DIM_1]],
                                     [['linear', DIM_2],['ReLu', DIM_2]],
                                     [['linear', DIM_3],['sigmoid', DIM_3]]
 
-                                ]   ,
+                                ]
+                                ,
     
     
-        'mlp' : 
+        'mlp_2': 
                                 [
-                                    [['linear', DIM_1],['ReLu', DIM_1]],
-                                    [['linear', DIM_2],['ReLu', DIM_2]],
-                                    [['linear', DIM_3],['softmax', DIM_3]]
+                                    [['linear', DIM_3],['ReLu', DIM_3]],
+                                    [['linear', DIM_3],['ReLu', DIM_3]],
+                                    [['linear', DIM],['softmax', DIM]]
 
-                                ]  ,
-    
+                                ],
 
-        'MHA' : [None]
-    ) 
+    }
 
 
-    } 
+    }
 
 
-
-Futur implementation handling multiblock 
+ # Futur implementation handling multiblock 
      
-"""
 
 
 
