@@ -11,9 +11,9 @@ from utils import linear_layer,linear_layer_grad_W,linear_layer_grad_x,softmax_l
 
 DIM = 2
 BATCH_SIZE = 32
-DIM_1 = 8
+DIM_1 = 4
 DIM_2 = 4
-DIM_3 = 2
+DIM_3 = 8
 
 
 config = {
@@ -22,18 +22,40 @@ config = {
     {
         'batch_size':BATCH_SIZE,
         'input_dim':DIM,
-        'block_type':"mlp_block"
+
     },
 
-    'nn_arch' : 
-    [
-        [['linear', DIM_1],['ReLu', DIM_1]],
-        [['linear', DIM_2],['ReLu', DIM_2]],
-        [['linear', DIM_3],['softmax', DIM_3]]
-
-    ]   
+    'nn_arch': 
+    {
     
+        'mlp_1':
+                                [
+                                    [['linear', DIM_1],['ReLu', DIM_1]],
+                                    [['linear', DIM_2],['ReLu', DIM_2]],
+                                    [['linear', DIM_3],['sigmoid', DIM_3]]
+
+                                ]
+                                ,
+    
+    
+        'mlp_2': 
+                                [
+                                    [['linear', DIM_3],['ReLu', DIM_3]],
+                                    [['linear', DIM_3],['ReLu', DIM_3]],
+                                    [['linear', DIM],['softmax', DIM]]
+
+                                ],
+
     }
+
+
+    }
+
+
+ # Futur implementation handling multiblock 
+     
+
+
 
 cache = weights_init(config)
 
@@ -44,6 +66,6 @@ Y = np.stack((column_1,column_2),axis=1)
 
 
 
-epochs = 10
+epochs = 100
 for j in range(epochs):
     train(BATCH_SIZE,X,Y,config,cache)

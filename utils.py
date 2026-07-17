@@ -125,31 +125,35 @@ def softmax_layer_grad(x:np.ndarray) -> np.ndarray:
 
 
 
-def mlp_block(x:np.ndarray,archi:dict,cache:dict) -> np.ndarray:
+def mlp_block(x:np.ndarray,archi:dict,cache:dict,pad:int = 0) -> np.ndarray:
     
     
     depth = len(archi)
     input = x 
 
-
     zi_1 = input 
     for i in range(depth):
-        cache[str(i)][0] = zi_1
-        w = cache[str(i)][1]
-        b = cache[str(i)][2]
+        cache[str(i+pad)][0] = zi_1
+        w = cache[str(i+pad)][1]
+        b = cache[str(i+pad)][2]
         if archi[i][0][0] == 'linear':  # other functions can be implemented
             xi= linear_layer(zi_1,w,b)
-        cache[f"x{i+1}"] = xi
+        cache[f"x{i+1+pad}"] = xi
         if archi[i][1][0] == 'ReLu': # other activations can be implemented also
             zi = relu_layer(xi)
         elif archi[i][1][0] == 'softmax':
-             zi = softmax_layer(xi)
-        zi_1 = zi
-
-    cache[str(depth)] = [zi_1,None,None] # caching the last activation(softmax for example) for backward pass
+            zi = softmax_layer(xi)
+        elif archi[i][1][0] == 'sigmoid':
+            zi = sigmoid_layer(xi)
+    
     
 
-    return zi_1    
+        zi_1 = zi
+
+    cache[str(depth+pad)][0] = zi_1 # caching the last activation(softmax for example) for backward pass
+    
+
+    return zi_1,depth + pad 
     
 
 """
@@ -162,52 +166,61 @@ PACKAGING UTILS FUNCTION
 def weights_init(config:dict)->dict:  # so dirty need to be reworked 
     input_dim = config["meta_data"]['input_dim']
     nn_config = config['nn_arch']
-    length = len(nn_config)           
-    dims = [input_dim]
-    cache = {}           
-    for i,j in enumerate(nn_config):
-        if j[0][0] == 'linear':
-            w = np.random.randn(dims[-1],j[0][1])
-            b = np.random.randn(j[0][1])
-            cache[str(i)] = [None,w,b]
-            cache['x' +  str(i+1)] = None
-            dims.append(j[0][1])
-            if i == length-1:
-                cache[str(i+1)] = [None]*3
+    cache = {}
+    dim = input_dim
+    pad=0
+    for block in nn_config:
+        length = len(nn_config[block])               
+        for i,j in enumerate(nn_config[block]):
+            if j[0][0] == 'linear':
+                w = np.random.randn(dim,j[0][1])
+                b = np.random.randn(j[0][1])
+                cache[str(i+pad)] = [None,w,b]
+                cache['x' +  str(i+1+pad)] = None
+                dim = (j[0][1])
+                if i == length-1:
+                    cache[str(i+1+pad)] = [None]*3
+
+        pad = pad + length
     return cache
 
 
 def pass_forward(x:np.ndarray,y_true:np.ndarray,config:dict,cache:dict,loss_type:str = 'CrossEntropyLoss') -> float:
     archi = config['nn_arch']
-    if config['meta_data']['block_type'] == 'mlp_block':
-        output = mlp_block(x,archi,cache)
+    input = x
+    depth = 0  
+    output  = input # avoid referencing before assignement problem
+    for block in archi:
+        if block[:3] == 'mlp':
+            output,depth = mlp_block(input,archi[block],cache,depth)
+            input  = output
+
 
     if loss_type == 'CrossEntropyLoss':
-        loss = cross_entropy_loss(y_pred= output,y_true=y_true)
+        loss = cross_entropy_loss(y_pred = output,y_true=y_true)
 
     return loss
 
 
-def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict = None,loss_type:str = 'CrossEntropyLoss',alpha = 1e-3):
+def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict = None,loss_type:str = 'CrossEntropyLoss',alpha = 5e-4):
     
     if gradients is None:
         gradients = {}    # avoid default mutable trap
     inverted_cache = dict(reversed(list(cache.items())[1:])) # inverse the dictionnary
-    arch_config = [layer[0] for block in arch_config for layer in block]
+    #arch_config = [layer[0] for block in arch_config for layer in block]
+    activations = [ layer[0] for block in arch_config for sub_block in  arch_config[block] for layer in sub_block ]
     last_key = list(cache)[-1]
+
+
     if loss_type == 'CrossEntropyLoss':
         gradients[f"dL/dz{last_key}"] = cross_entropy_backward(y_true,cache[last_key][0])
     
-    for i,j in zip(inverted_cache,np.arange(len(arch_config))[1:][::-1]):
-        """if (j == 0) and (loss_type == 'CrossEntropyLoss'):  # * this should be re worked in the future , we dont want to evaluate the condition at each layer * 
-            gradients[f"dL/dz{i}"] = cross_entropy_backward(y_true,cache[i][0])
-            gradients[f"dz{i}/dx{i}"] = softmax_layer_grad(cache[i]|0)
-            gradients[f"dL/dx{i}"] = np.squeeze(gradients["dz{i}/dx{i}"] @ (gradients["dL/dz{i}"][...,None]),axis=-1) # (B,DIM2,DIM2) @ (B,DIM2,1) = (B,DIM2,1) ->(B,DIM2) DONE
-            j=j+1"""
+    for i,j in zip(inverted_cache, np.arange(len(activations))[::-1]):
+
         
         if type(cache[i]) is np.ndarray:
             i_suffix = int((i[1:]))
-            if arch_config[(j)] == 'linear':
+            if activations[(j)] == 'linear':
                 
                 """"
                 gradients[f"d{i}/dz{(i_suffix)-1}"]  = linear_layer_grad_x(cache[str(i_suffix-1)])
@@ -228,11 +241,14 @@ def pass_backward(cache:dict,arch_config:dict,y_true:np.ndarray,gradients:dict =
                 cache[str(i_suffix-1)][1] = cache[str(i_suffix-1)][1] - alpha * np.average(gradients[f"dL/dw{(i_suffix)-1}"],axis=0)
                 cache[str(i_suffix-1)][2] = cache[str(i_suffix-1)][2] - alpha * np.average(gradients[f"dL/db{(i_suffix)-1}"],axis=0)
         else:
-            if arch_config[(j)] == 'softmax':
+            if activations[(j)] == 'softmax':
                 gradients[f"dz{i}/dx{i}"] = softmax_layer_grad(cache[i][0])
                 gradients[f"dL/dx{i}"] = np.squeeze(gradients[f"dz{i}/dx{i}"] @ (gradients[f"dL/dz{i}"][...,None]),axis=-1)
-            if arch_config[(j)] == 'ReLu':
+            if activations[(j)] == 'ReLu':
                 gradients[f"dz{i}/dx{i}"] = relu_layer_grad(cache[i][0])
+                gradients[f"dL/dx{i}"] = gradients[f"dz{i}/dx{i}"] * gradients[f"dL/dz{i}"]
+            if activations[(j)] == 'sigmoid':
+                gradients[f"dz{i}/dx{i}"] = sigmoid_layer_grad(cache[i][0])
                 gradients[f"dL/dx{i}"] = gradients[f"dz{i}/dx{i}"] * gradients[f"dL/dz{i}"]
 
 
@@ -315,7 +331,6 @@ def attention_matrix(key:np.ndarray,query:np.ndarray) -> np.ndarray:
 
 def hidd_udpates(attention_matrix:np.ndarray,v:np.ndarray)->np.ndarray:
     # (BATCH,HEAD,SEQ_LEN,SEQ_LEN) & (BATCH,HEAD,SEQ_LEN,DIM1) -> (BATCH,HEAD,SEQ_LEN,DIM1)
-
     return np.mean(attention_matrix @ v,axis = 1)  # averaging over the heads , but we could do  an MLP 
 
 def MHA(x:np.ndarray,q:np.ndarray,k:np.ndarray,v:np.ndarray)->np.ndarray:
